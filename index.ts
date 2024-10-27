@@ -2,12 +2,13 @@ import express, { Request, Response, Application, NextFunction } from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import { config } from "dotenv";
-import { groupsRoutes } from "./routes/groupsRoutes";
-import ExpressError from "./utilities/ExpressError";
-
 if (process.env.NODE_ENV !== "production") {
   config();
 }
+
+import { recipesRoutes } from "./routes/recipesRoutes";
+import { groupsRoutes } from "./routes/groupsRoutes";
+import ExpressError from "./utilities/ExpressError";
 
 mongoose
   .connect("mongodb://127.0.0.1:27017/platemate")
@@ -23,6 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
+app.use("/recipes", recipesRoutes);
 app.use("/groups", groupsRoutes);
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {

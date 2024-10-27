@@ -1,0 +1,16 @@
+export enum Unit {
+  G = "g",
+  MG = "mg",
+  DAG = "dag",
+  KG = "kg",
+  OUNCE = "ounce",
+  OZ = "oz",
+  LB = "lb",
+  TBSP = "Tbsp",
+  TSP = "tsp",
+  CUP = "cup",
+  PIECE = "piece",
+  ML = "ml",
+  L = "l",
+  GAL = "gal",
+}
