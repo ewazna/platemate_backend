@@ -1,11 +1,14 @@
 {
   "dependencies": {
     "cloudinary": "^1.41.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "env": "^0.0.2",
-    "express": "^4.19.2",
+    "express": "^4.21.1",
     "express-session": "^1.18.0",
+    "firebase": "^11.0.1",
+    "firebase-admin": "^12.7.0",
     "joi": "^17.13.3",
     "method-override": "^3.0.0",
     "mongoose": "^8.5.2",
@@ -15,6 +18,7 @@
     "sanitize-html": "^2.13.0"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/method-override": "^0.0.35",
