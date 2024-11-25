@@ -1,9 +1,10 @@
 import { Difficulty } from "./DifficultyEnum";
-import { Ingredient } from "./Ingredient";
+import { RecipeIngredient } from "./RecipeIngredient";
 import { MealCategory } from "./MealCategoryEnum";
 
 export interface Recipe {
   id?: string;
+  userId: string;
   creationDate: string;
   title: string;
   category: MealCategory;
@@ -12,7 +13,7 @@ export interface Recipe {
   portions: number;
   difficulty: Difficulty;
   tags?: string[];
-  ingredients: Ingredient[];
+  ingredients: RecipeIngredient[];
   description: string;
   steps: string[];
   photos: {
