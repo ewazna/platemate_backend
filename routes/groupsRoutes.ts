@@ -1,16 +1,13 @@
 import express from "express";
 import catchAsync from "../utilities/catchAsync";
-import {
-  getGroups,
-  getGroup,
-  updateGroups,
-  updateGroup,
-} from "../controllers/groups";
+import { getGroups, updateGroups } from "../controllers/groups";
+import verifyToken from "../utilities/verifyToken";
 
 const router = express.Router();
 
-router.route("/").get(catchAsync(getGroups)).put(catchAsync(updateGroups));
-
-router.route("/:id").get(catchAsync(getGroup)).put(catchAsync(updateGroup));
+router
+  .route("/")
+  .get(verifyToken, catchAsync(getGroups))
+  .put(verifyToken, catchAsync(updateGroups));
 
 export { router as groupsRoutes };

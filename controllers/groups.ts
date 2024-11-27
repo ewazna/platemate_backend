@@ -1,74 +1,71 @@
-import { NextFunction, Request, Response } from "express";
-import mongoose from "mongoose";
+import { Response } from "express";
 
+import { RequestWithUser } from "../modelsTypeScript";
 import Group from "../models/group";
 import Recipe from "../models/recipe";
-import ExpressError from "../utilities/ExpressError";
 
-const getGroups = async (req: Request, res: Response) => {
-  const groups = await Group.find();
+const getGroups = async (req: RequestWithUser, res: Response) => {
+  const userId = req.user!.uid;
+  const groups = await Group.find({ userId: { $eq: userId } });
   res.send(groups);
 };
 
-const getGroup = async (req: Request, res: Response, next: NextFunction) => {
-  const group = await Group.findById(req.params.id);
-  if (!group) {
-    return next(new ExpressError(404, "Resource not found"));
-  }
-  res.send(group);
-};
+const updateGroups = async (req: RequestWithUser, res: Response) => {
+  const userId = req.user!.uid;
+  const requestGroups = [...req.body.groups];
+  const deleteRecipes = req.body.deleteRecipes;
 
-const updateGroup = async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params;
-  const group = await Group.findByIdAndUpdate(id, {
-    ...req.body.group,
-  });
-  if (!group) {
-    return next(new ExpressError(404, "Resource not found"));
-  }
-  await group.save();
-  res.send(group);
-};
-
-const updateGroups = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const idArray = (await Group.find()).map((group) => group._id.toString());
-  const groups = [...req.body.groups];
-  const groupsIdArray = groups.map((group) => group._id);
-  const groupsToRemove = idArray.filter((id) => {
-    return !groupsIdArray.includes(id);
+  const existingGroups = await Group.find({ userId: { $eq: userId } });
+  const existingGroupIds = existingGroups.map((group) => group.id);
+  const requestGroupIds = requestGroups.map((group) => group._id);
+  const groupsToRemove = existingGroupIds.filter((id) => {
+    return !requestGroupIds.includes(id);
   });
 
-  await Promise.all(
-    groups.map((group, i) => {
-      if (idArray.includes(group._id)) {
+  await Promise.all([
+    ...requestGroups.map((group, i) => {
+      if (existingGroupIds.includes(group._id)) {
         return Group.findOneAndUpdate({ _id: group._id }, { name: group.name });
       } else {
-        return Group.insertMany({ name: group.name });
+        return Group.insertMany({
+          userId: userId,
+          name: group.name,
+          state: "empty",
+        });
       }
-    })
+    }),
+    ...groupsToRemove.map((id) => {
+      return Group.findOneAndDelete({ _id: id });
+    }),
+  ]);
+
+  const recipesWithRemovedGroup = await Recipe.find({
+    $and: [{ userId: { $eq: userId } }, { groups: { $in: groupsToRemove } }],
+  });
+  const recipesWithRemovedGroupIds = recipesWithRemovedGroup.map(
+    (recipe) => recipe.id
   );
 
-  await Promise.all(
-    groupsToRemove.map((id) => {
-      return Group.findOneAndDelete({ _id: new mongoose.Types.ObjectId(id) });
-    })
+  await Recipe.updateMany(
+    {
+      $and: [{ userId: { $eq: userId } }, { groups: { $in: groupsToRemove } }],
+    },
+    { $pull: { groups: { $in: groupsToRemove } } }
   );
-  await Promise.all(
-    groupsToRemove.map((id) => {
-      Recipe.findOneAndUpdate(
-        { groups: { $elemMatch: { $eq: id } } },
-        { $pull: { groups: { $eq: id } } }
-      );
-    })
-  );
-  const uploadedGroups = await Group.find();
+
+  if (deleteRecipes) {
+    await Recipe.deleteMany({
+      $and: [
+        { _id: { $in: recipesWithRemovedGroupIds } },
+        { groups: { $eq: [] } },
+      ],
+    });
+  }
+
+  const finalGroups = await Group.find({ user: { $eq: userId } });
 
   res.status(200);
-  res.send(uploadedGroups);
+  res.send(finalGroups);
 };
 
-export { getGroups, getGroup, updateGroup, updateGroups };
+export { getGroups, updateGroups };
