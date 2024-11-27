@@ -4,6 +4,7 @@ import { Recipe, Difficulty, Unit, MealCategory } from "../modelsTypeScript";
 const Schema = mongoose.Schema;
 
 const recipeSchema = new Schema<Recipe>({
+  userId: { type: String, required: true },
   creationDate: { type: String, required: true },
   title: { type: String, required: true },
   category: { type: String, enum: Object.values(MealCategory) },

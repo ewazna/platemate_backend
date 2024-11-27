@@ -5,13 +5,19 @@ import Group from "../models/group";
 import ExpressError from "../utilities/ExpressError";
 import { NextFunction, Request, Response } from "express";
 import { cloudinary } from "../cloudinary";
+import { RequestWithUser } from "../modelsTypeScript";
 
-const getRecipes = async (req: Request, res: Response) => {
+const getRecipes = async (req: RequestWithUser, res: Response) => {
   const { filterConfig, sortConfig, searchConfig, selectedGroup } = req.query;
+  const userId = req.user!.uid;
 
   let sortOption: any = { creationDate: -1 };
   let findOptions: any = {
-    $and: [],
+    $and: [
+      {
+        userId: { $eq: userId },
+      },
+    ],
   };
 
   if (sortConfig) {
@@ -77,19 +83,18 @@ const getRecipes = async (req: Request, res: Response) => {
     findOptions.$and.push({ title: { $regex: searchTerm, $options: "i" } });
   }
 
-  const recipes = await Recipe.find(
-    findOptions.$and.length > 0 ? findOptions : {}
-  ).sort(sortOption);
+  const recipes = await Recipe.find(findOptions).sort(sortOption);
 
   res.send(recipes);
 };
 
-const createRecipe = async (req: Request, res: Response) => {
+const createRecipe = async (req: RequestWithUser, res: Response) => {
   const body = req.body;
+  const userId = req.user!.uid;
 
   body.ingredients = parseIngredients(body.ingredients);
 
-  const recipe = new Recipe(body);
+  const recipe = new Recipe({ userId: userId, ...body });
 
   if (req.files && Array.isArray(req.files)) {
     recipe.photos = req.files.map((photo) => {
@@ -105,7 +110,7 @@ const createRecipe = async (req: Request, res: Response) => {
 
   await handleNewTags(body.tags);
   await handleNewIngredients(body.ingredients);
-  await markGroupsAsUsed(body.groups);
+  await markGroupsAsUsed(body.groups, userId);
 
   res.status(201);
   res.send(recipe);
@@ -120,25 +125,37 @@ const getRecipe = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 const updateRecipe = async (
-  req: Request,
+  req: RequestWithUser,
   res: Response,
   next: NextFunction
 ) => {
   const { id } = req.params;
+  const userId = req.user!.uid;
+
+  const recipe = await Recipe.findById(id);
+  if (!recipe) {
+    return next(new ExpressError(404, "Resource not found"));
+  }
+  if (recipe?.userId !== userId) {
+    return next(
+      new ExpressError(403, "Access to the requested resource is forbidden")
+    );
+  }
+
   const body = req.body;
 
   body.ingredients = parseIngredients(body.ingredients);
 
-  const recipe = await Recipe.findByIdAndUpdate(id, {
+  const updatedRecipe = await Recipe.findByIdAndUpdate(id, {
     ...body,
   });
-  if (!recipe) {
+  if (!updatedRecipe) {
     return next(new ExpressError(404, "Resource not found"));
   }
 
   if (body.deletedPhotos) {
-    recipe.photos = [
-      ...recipe.photos.filter(
+    updatedRecipe.photos = [
+      ...updatedRecipe.photos.filter(
         (photo) => !body.deletedPhotos.includes(photo.filename)
       ),
     ];
@@ -147,34 +164,50 @@ const updateRecipe = async (
     }
   }
   if (req.files && Array.isArray(req.files)) {
-    recipe.photos = [
-      ...recipe.photos,
+    updatedRecipe.photos = [
+      ...updatedRecipe.photos,
       ...req.files.map((photo) => {
-        return { filename: photo.filename, url: photo.path, state: "existing" };
+        return {
+          filename: photo.filename,
+          url: photo.path,
+          state: "existing",
+        };
       }),
     ];
   }
 
-  await recipe.save();
+  await updatedRecipe.save();
 
   await handleNewTags(body.tags);
   await handleNewIngredients(body.ingredients);
-  await markGroupsAsUsed(body.groups);
+  await markGroupsAsUsed(body.groups, userId);
 
-  res.send(recipe);
+  res.send(updatedRecipe);
 };
 
 const deleteRecipe = async (
-  req: Request,
+  req: RequestWithUser,
   res: Response,
   next: NextFunction
 ) => {
   const { id } = req.params;
-  const recipe = await Recipe.findByIdAndDelete(id);
+  const userId = req.user!.uid;
+
+  const recipe = await Recipe.findById(id);
   if (!recipe) {
     return next(new ExpressError(404, "Resource not found"));
   }
-  res.send(recipe._id);
+  if (recipe?.userId !== userId) {
+    return next(
+      new ExpressError(403, "Access to the requested resource is forbidden")
+    );
+  }
+
+  const deletedRecipe = await Recipe.findByIdAndDelete(id);
+  if (!deletedRecipe) {
+    return next(new ExpressError(404, "Resource not found"));
+  }
+  res.send(deletedRecipe.id);
 };
 
 function parseIngredients(ingredients: string | string[]): Ingredient[] {
@@ -219,16 +252,20 @@ async function handleNewIngredients(
   );
 }
 
-async function markGroupsAsUsed(groups: string | string[]): Promise<void> {
-  if (groups && Array.isArray(groups)) {
-    await Promise.all(
-      groups.map((id: string) => {
-        return Group.findByIdAndUpdate(id, { state: "used" });
-      })
-    );
-  } else {
-    await Group.findByIdAndUpdate(groups, { state: "used" });
-  }
+async function markGroupsAsUsed(
+  groups: string | string[],
+  userId: string
+): Promise<void> {
+  const userGroupIds = (await Group.find({ userId: { $eq: userId } })).map(
+    (group) => group.id
+  );
+  const groupIds = Array.isArray(groups) ? groups : [groups];
+
+  await Promise.all(
+    groupIds
+      .filter((id: string) => userGroupIds.includes(id))
+      .map((id: string) => Group.findByIdAndUpdate(id, { state: "used" }))
+  );
 }
 
 export { getRecipes, createRecipe, getRecipe, updateRecipe, deleteRecipe };
