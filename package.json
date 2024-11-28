@@ -8,13 +8,13 @@
     "express": "^4.21.1",
     "express-session": "^1.18.0",
     "firebase-admin": "^12.7.0",
-    "joi": "^17.13.3",
     "method-override": "^3.0.0",
     "mongoose": "^8.5.2",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
     "path": "^0.12.7",
-    "sanitize-html": "^2.13.0"
+    "sanitize-html": "^2.13.0",
+    "typescript": "^5.7.2"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.7",
