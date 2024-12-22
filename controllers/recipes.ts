@@ -57,7 +57,7 @@ const getRecipes = async (req: RequestWithUser, res: Response) => {
     }
     if (ingredients && ingredients.length > 0) {
       findOptions.$and.push({
-        ingredients: { $in: ingredients },
+        "ingredients.name": { $in: ingredients },
       });
     }
     if (time) {
@@ -84,7 +84,6 @@ const getRecipes = async (req: RequestWithUser, res: Response) => {
   }
 
   const recipes = await Recipe.find(findOptions).sort(sortOption);
-
   res.send(recipes);
 };
 

@@ -1,4 +1,4 @@
-import Ingredient from "../models/Ingredient";
+import Ingredient from "../models/ingredient";
 import { Request, Response } from "express";
 
 const getIngredients = async (req: Request, res: Response) => {
