@@ -4,7 +4,8 @@ import { RequestWithUser } from "../modelsTypeScript";
 import ExpressError from "./ExpressError";
 
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
-  const idToken = req.cookies.access_token;
+  const idToken = req.headers.authorization?.split("Bearer ")[1];
+
   if (!idToken) {
     return next(new ExpressError(401, "No token provided"));
   }
