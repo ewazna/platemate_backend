@@ -21,7 +21,7 @@ router
 
 router
   .route("/:id")
-  .get(verifyToken, catchAsync(getRecipe))
+  .get(catchAsync(getRecipe))
   .put(verifyToken, upload.array("addedPhotos", 5), catchAsync(updateRecipe))
   .delete(verifyToken, catchAsync(deleteRecipe));
 
