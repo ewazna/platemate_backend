@@ -1,6 +1,6 @@
 import Recipe from "../models/recipe";
 import Tag from "../models/tag";
-import Ingredient from "../models/Ingredient";
+import Ingredient from "../models/ingredient";
 import Group from "../models/group";
 import ExpressError from "../utilities/ExpressError";
 import { NextFunction, Request, Response } from "express";
@@ -47,7 +47,7 @@ const getRecipes = async (req: RequestWithUser, res: Response) => {
     }
     if (categories && categories.length > 0) {
       findOptions.$and.push({
-        categories: { $in: categories },
+        category: { $in: categories },
       });
     }
     if (difficulty && difficulty.length > 0) {
@@ -203,11 +203,11 @@ const deleteRecipe = async (
     );
   }
 
-  const deletedRecipe = await Recipe.findByIdAndDelete(id);
+  const deletedRecipe = await Recipe.findOneAndDelete({ _id: { $eq: id } });
   if (!deletedRecipe) {
     return next(new ExpressError(404, "Resource not found"));
   }
-  res.send(deletedRecipe.id);
+  res.send(deletedRecipe);
 };
 
 function parseIngredients(ingredients: string | string[]): Ingredient[] {
