@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node index.ts",
+    "start:prod": "SET NODE_ENV=production && node .\\dist\\index.js"
+  },
   "dependencies": {
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
