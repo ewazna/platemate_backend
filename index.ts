@@ -15,7 +15,7 @@ import { ingredientsRoutes } from "./routes/ingredientsRoutes";
 import ExpressError from "./utilities/ExpressError";
 
 mongoose
-  .connect("mongodb://127.0.0.1:27017/platemate")
+  .connect(process.env.MONGO_DB_URI as string)
   .then(() => {
     console.log("Connection Open");
   })
