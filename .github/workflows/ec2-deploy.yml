@@ -46,7 +46,7 @@ jobs:
       - name: rsync deployments
         uses: burnett01/rsync-deployments@5.1
         with:
-          switches: -avzr --delete --include="/node_modules/***" --include="/dist/***" --include="/package.json" --include="/package-lock.json" --include="/.env" --exclude="*"
+          switches: -avzr --delete --ignore-times --include="/node_modules/***" --include="/dist/***" --include="/package.json" --include="/package-lock.json" --include="/.env" --exclude="*"
           remote_path: /var/www/my-app/
           remote_host: ${{ secrets.EC2_HOST }}
           remote_user: ubuntu
