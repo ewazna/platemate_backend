@@ -1,7 +1,5 @@
 import { config } from "dotenv";
-if (process.env.NODE_ENV !== "production") {
-  config();
-}
+config();
 
 import express, { Request, Response, Application, NextFunction } from "express";
 import mongoose from "mongoose";
