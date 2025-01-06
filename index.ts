@@ -23,7 +23,7 @@ mongoose
 
 const app: Application = express();
 
-app.use(cors({ credentials: true, origin: "https://platemate.com.pl" }));
+app.use(cors({ credentials: true, origin: process.env.CORS_ORIGIN }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
